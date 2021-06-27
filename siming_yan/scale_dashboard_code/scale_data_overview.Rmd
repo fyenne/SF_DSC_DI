@@ -1,0 +1,144 @@
+---
+title: "scrapy_data_clean"
+author: "Siming Yan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  flexdashboard::flex_dashboard:
+    vertical_layout: fill
+    # theme: cerulean
+    prettydoc::html_pretty:
+      theme: cerulean
+      highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include = F}
+library(flexdashboard)
+library(tidyverse)
+library(reshape2)
+library(highcharter)
+```
+
+```{r include=FALSE}
+# Create a custom theme for the plots. 
+custom_theme <- hc_theme(
+  colors = c('#5CACEE', 'green', 'red'),
+  chart = list(
+         backgroundColor = '#FAFAFA', 
+         plotBorderColor = "black"),
+  xAxis = list(
+         gridLineColor = "E5E5E5", 
+         labels = list(style = list(color = "#333333")), 
+         lineColor = "#E5E5E5", 
+         minorGridLineColor = "#E5E5E5", 
+         tickColor = "#E5E5E5", 
+         title = list(style = list(color = "#333333"))), 
+  yAxis = list(
+         gridLineColor = "#E5E5E5", 
+         labels = list(style = list(color = "#333333")), 
+         lineColor = "#E5E5E5", 
+         minorGridLineColor = "#E5E5E5", 
+         tickColor = "#E5E5E5", 
+         tickWidth = 1, 
+         title = list(style = list(color = "#333333"))),   
+  title = list(style = list(color = '#333333', fontFamily = "Lato")),
+  subtitle = list(style = list(color = '#666666', fontFamily = "Lato")),
+  legend = list(
+         itemStyle = list(color = "#333333"), 
+         itemHoverStyle = list(color = "#FFF"), 
+         itemHiddenStyle = list(color = "#606063")), 
+  credits = list(style = list(color = "#666")),
+  itemHoverStyle = list(color = 'gray'))
+```
+
+<style>
+.colored {
+  background-color: #FAFAFA;
+}
+</style>
+
+
+
+```{r, include = F}
+# getwd()
+full_scale_full = read.csv("./full_scale_full.csv")
+full_scale_full$module %>% unique()
+# [1] "outbound"    "inbound"     "item_master" "inventory"   "main_data"
+```
+
+<!-- outbound -->
+<!-- =====================================    -->
+
+<!-- ```{r} -->
+<!-- highchart() %>%  -->
+<!--   hc_add_series(pie_sex2, hcaes(x = X, y = Y,  -->
+<!--                                color = X), type = "bar") %>% -->
+<!--   hc_tooltip(borderWidth = 1.5, headerFormat = "", pointFormat = paste("module: <b>{point.X} ({point.percentage:.1f}%)</b> <br> Count: <b>{point.Y}</b>")) %>% -->
+<!--   hc_title(text = "<b>module distribution in 2021-05-24</b>", style = (list(fontSize = '14px'))) %>%  -->
+<!--   hc_plotOptions(pie = list(dataLabels = list(distance = 5,  -->
+<!--                             style = list(fontSize = 10)),  -->
+<!--                             size = 330)) %>%  -->
+<!--   hc_add_theme(custom_theme) -->
+<!-- ``` -->
+
+
+outbound
+=====================================     
+
+```{r, echo = F}
+# (full_scale_full %>% subset(module == 'outbound'))[,1:15]
+library(DT)
+DT::datatable((full_scale_full %>% subset(module == 'outbound'))[,1:12],
+  rownames = FALSE, options = list(pageLength = 1000)
+)
+```
+
+inbound
+=====================================     
+
+```{r, echo = F}
+library(DT)
+DT::datatable((full_scale_full %>% subset(module == 'inbound'))[,1:12],
+  rownames = FALSE, options = list(pageLength = 1000)
+)
+```
+
+item_master
+=====================================     
+
+```{r, echo = F}
+library(DT)
+DT::datatable((full_scale_full %>% subset(module == 'item_master'))[,1:12],
+  rownames = FALSE, options = list(pageLength = 1000)
+)
+```
+
+inventory
+=====================================     
+
+```{r, echo = F}
+library(DT)
+DT::datatable((full_scale_full %>% subset(module == 'inventory'))[,1:12],
+  rownames = FALSE, options = list(pageLength = 1000)
+)
+```
+
+main_data
+=====================================
+
+```{r, echo = F}
+library(DT)
+DT::datatable((full_scale_full %>% subset(module == 'main_data'))[,1:12],
+  rownames = FALSE, options = list(pageLength = 1000)
+)
+```
+
+
+```{r}
+full_scale_full$module %>% unique()
+full_scale_full %>% subset(module != c("outbound","inbound","inventory"))
+```
+
