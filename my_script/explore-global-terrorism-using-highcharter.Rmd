@@ -1,0 +1,321 @@
+---
+output: html_document
+---
+
+<center><h1>Global Terrorism 1970-2015</h1></center>
+<center><h3>More than 150,000 terrorist attacks worldwide</h3></center>
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.width = 9, fig.height = 7)
+
+library(dplyr)
+library(DT)
+library(highcharter)
+
+globalterror <- read.csv("../input/globalterrorismdb_0616dist.csv")
+
+globalterror$iyear <- factor(globalterror$iyear)
+globalterror$success <- factor(globalterror$success)
+
+```
+
+### Map of Global Terror Attacks 1970-2015
+
+```{r}
+
+library("viridisLite")
+library(countrycode)
+
+countries <- globalterror %>% group_by(country_txt) %>% summarise(Total = round(n()))
+names(countries) <- c("country.name", "total")
+countries$iso3 <- countrycode_data[match(countries$country.name, countrycode_data$country.name), "iso3c"]
+
+
+
+data(worldgeojson, package = "highcharter")
+dshmstops <- data.frame(q = c(0, exp(1:5)/exp(5)),
+                        c = substring(viridis(5 + 1, option = "D"), 0, 7)) %>%  list_parse2()
+
+highchart() %>% 
+  hc_add_series_map(worldgeojson, countries, value = "total", joinBy = "iso3") %>% 
+  hc_colorAxis(stops = dshmstops) %>% 
+  hc_legend(enabled = TRUE) %>% 
+  hc_add_theme(hc_theme_db()) %>% 
+  hc_mapNavigation(enabled = TRUE) %>%
+  hc_title(text = "Global Terror Attacks 1970-2015") %>%
+  hc_add_theme(hc_theme_google()) %>%
+  hc_credits(enabled = TRUE, text = "Sources: National Consortium for the Study of Terrorism and Responses to Terrorism (START)", style = list(fontSize = "10px")) 
+
+
+```
+
+
+* Iraq had the most number of attacks - 18K
+* Followed by Pakistan, Afghanistan and India.
+* Columbia and Peru combined had more than 14K attacks 
+* USA had around 2700 attacks.
+* UK, France and Spain combined had around 10K attacks.
+
+
+### Number of Attacks 1970-2015
+
+```{r}
+
+by_year <- as.data.frame(table(globalterror$iyear))
+names(by_year) <- c("Year", "Total")
+
+hchart(globalterror$iyear, name = "Year", color = "darkblue") %>%
+    hc_title(text = "Number of Terror Attacks 1970-2015") %>%
+        hc_add_theme(hc_theme_google()) %>%
+  hc_credits(enabled = TRUE, text = "Sources: National Consortium for the Study of Terrorism and Responses to Terrorism (START)", style = list(fontSize = "10px")) 
+
+globalterror2 <- count(globalterror, iyear, success)
+
+hchart(globalterror2, "column", x = iyear, y = n, group = success, name = "Year") %>%
+    hc_title(text = "Number of Terror Attacks 1970-2015 ") %>%
+        hc_subtitle(text = "(Success or Failure)") %>%
+           hc_add_theme(hc_theme_google()) %>%
+  hc_credits(enabled = TRUE, text = "Sources: National Consortium for the Study of Terrorism and Responses to Terrorism (START)", style = list(fontSize = "10px")) 
+
+
+hchart(by_year, "treemap", x = Year, value = Total, color = Total) %>%
+      hc_add_theme(hc_theme_google()) %>%
+          hc_title(text = "Yearwise distribution of Attacks") %>%
+  hc_credits(enabled = TRUE, text = "Sources: National Consortium for the Study of Terrorism and Responses to Terrorism (START)", style = list(fontSize = "10px")) 
+
+
+```
+
+
+### Terror Across Different Regions by Number of Attacks
+
+```{r}
+
+hchart(globalterror$region_txt, colorByPoint = TRUE, name = "Region") %>%
+    hc_title(text = "Number of Terror Attacks Across Different Regions") %>%
+          hc_add_theme(hc_theme_google()) %>%
+  hc_credits(enabled = TRUE, text = "Sources: National Consortium for the Study of Terrorism and Responses to Terrorism (START)", style = list(fontSize = "10px")) 
+
+by_regions <- globalterror %>% group_by(region_txt) %>% summarise(Total = n()) 
+
+hchart(by_regions, x = region_txt, value = Total, color = Total, type = "treemap") %>%
+      hc_add_theme(hc_theme_google()) %>%
+  hc_credits(enabled = TRUE, text = "Sources: National Consortium for the Study of Terrorism and Responses to Terrorism (START)", style = list(fontSize = "10px")) 
+
+```
+
+
+### Top 20 Countries by Number of Attacks
+
+```{r}
+
+by_countries <- globalterror %>% group_by(country_txt) %>% summarise(Total = n()) %>% arrange(desc(Total)) %>% head(20)
+
+
+hchart(by_countries, type = "column", x = country_txt, y = Total) %>%
+    hc_title(text = "Top 20 Countries by Number of Attacks") %>%
+           hc_add_theme(hc_theme_google()) %>%
+  hc_credits(enabled = TRUE, text = "Sources: National Consortium for the Study of Terrorism and Responses to Terrorism (START)", style = list(fontSize = "10px")) 
+
+hchart(by_countries, type = "treemap", x = country_txt, value = Total, color = Total) %>%
+    hc_title(text = "Top 20 Countries by Number of Attacks") %>%
+        hc_subtitle(text = "Tree Map of the Number of Attacks") %>%
+        hc_add_theme(hc_theme_google()) %>%
+  hc_credits(enabled = TRUE, text = "Sources: National Consortium for the Study of Terrorism and Responses to Terrorism (START)", style = list(fontSize = "10px")) 
+
+```
+
+
+
+### Top 20 Cities by Number of attacks
+
+```{r}
+
+cities <- globalterror[globalterror$city !="Unknown",] %>% group_by(city) %>% summarise(Total = n()) %>% arrange(desc(Total)) %>% head(20)
+
+hchart(cities, x = city, value = Total, color = Total, "treemap") %>%
+        hc_title(text = "Top 20 Cities by Number of Attacks") %>%
+            hc_subtitle("Majority of the attacks do not have the city recorded") %>%
+              hc_add_theme(hc_theme_google()) %>%
+  hc_credits(enabled = TRUE, text = "Sources: National Consortium for the Study of Terrorism and Responses to Terrorism (START)", style = list(fontSize = "10px")) 
+
+```
+
+
+### Map of Global Terror Attacks 1970-2015 - Number of Killed
+
+```{r}
+
+countries <- globalterror[!is.na(globalterror$nkill),] %>% group_by(country_txt) %>% summarise(Total = round(sum(nkill)))
+names(countries) <- c("country.name", "total")
+countries$iso3 <- countrycode_data[match(countries$country.name, countrycode_data$country.name), "iso3c"]
+
+
+highchart() %>% 
+  hc_add_series_map(worldgeojson, countries, value = "total", joinBy = "iso3") %>% 
+  hc_colorAxis(stops = dshmstops) %>% 
+  hc_legend(enabled = TRUE) %>% 
+  hc_add_theme(hc_theme_db()) %>% 
+  hc_mapNavigation(enabled = TRUE) %>%
+  hc_title(text = "Global Terror Attacks 1970-2015 - Number of Killed") %>%
+  hc_add_theme(hc_theme_google()) %>%
+  hc_credits(enabled = TRUE, text = "Sources: National Consortium for the Study of Terrorism and Responses to Terrorism (START)", style = list(fontSize = "10px")) 
+
+
+```
+
+
+
+* Iraq had more than 58K people killed.
+* Pakistan, Afghanistan and India combined had nearly 70K killed.
+* Nigeria and Algeria combined had 30K killed.
+* Peru and Columbia combined had around 26K killed.
+
+
+
+### Regions based on Number of People Killed
+
+```{r}
+
+killed_regions <- globalterror[!is.na(globalterror$nkill),] %>% group_by(region_txt) %>% summarise(Total = sum(nkill)) %>% arrange(desc(Total))
+
+hchart(killed_regions, x = region_txt, value = Total, color = Total, "treemap") %>%
+        hc_title(text = "Regions based on Number of People Killed") %>%
+              hc_add_theme(hc_theme_google()) %>%
+  hc_credits(enabled = TRUE, text = "Sources: National Consortium for the Study of Terrorism and Responses to Terrorism (START)", style = list(fontSize = "10px")) 
+
+```
+
+
+### Top 20 Countries based on Number of People Killed
+
+```{r}
+
+countries_killed <- globalterror[!is.na(globalterror$nkill),] %>% group_by(country_txt) %>% summarise(Total =  round(sum(nkill))) %>% arrange(desc(Total)) %>% head(20)
+
+hchart(countries_killed, x = country_txt, value = Total, color = Total, "treemap") %>%
+        hc_title(text = "Top 20 Countries based on Number of People Killed") %>%
+              hc_add_theme(hc_theme_google()) %>%
+  hc_credits(enabled = TRUE, text = "Sources: National Consortium for the Study of Terrorism and Responses to Terrorism (START)", style = list(fontSize = "10px")) 
+
+```
+
+### Top 20 Cities based on Number of People Killed
+
+```{r}
+
+cities_killed <- globalterror[globalterror$city !="Unknown" & !is.na(globalterror$nkill),] %>% group_by(city) %>% summarise(Total = round(sum(nkill))) %>% arrange(desc(Total)) %>% head(20)
+
+hchart(cities_killed, x = city, value = Total, color = Total, "treemap") %>%
+        hc_title(text = "Top 20 Cities based on Number of People Killed") %>%
+              hc_add_theme(hc_theme_google()) %>%
+  hc_credits(enabled = TRUE, text = "Sources: National Consortium for the Study of Terrorism and Responses to Terrorism (START)", style = list(fontSize = "10px")) 
+
+```
+
+
+### Top 20 Countries based on Number of USA Citizens killed
+
+```{r}
+
+countries_killed_US <- globalterror[!is.na(globalterror$nkillus),] %>% group_by(country_txt) %>% summarise(Total = sum(nkillus)) %>% arrange(desc(Total)) %>% head(20)
+
+hchart(countries_killed_US, x = country_txt, value = Total, color = Total, "treemap") %>%
+        hc_title(text = "Top 20 Countries based on Number of USA Citizens killed") %>%
+              hc_add_theme(hc_theme_google()) %>%
+  hc_credits(enabled = TRUE, text = "Sources: National Consortium for the Study of Terrorism and Responses to Terrorism (START)", style = list(fontSize = "10px")) 
+
+```
+
+
+### Top 20 Cities based on Number of USA Citizens killed
+
+```{r}
+
+cities_killed_US <- globalterror[globalterror$city !="Unknown" & !is.na(globalterror$nkillus),] %>% group_by(city) %>% summarise(Total = sum(nkillus)) %>% arrange(desc(Total)) %>% head(20)
+
+hchart(cities_killed_US, x = city, value = Total, color = Total, "treemap") %>%
+        hc_title(text = "Top 20 Cities based on Number of USA Citizens killed") %>%
+              hc_add_theme(hc_theme_google()) %>%
+  hc_credits(enabled = TRUE, text = "Sources: National Consortium for the Study of Terrorism and Responses to Terrorism (START)", style = list(fontSize = "10px")) 
+
+```
+
+
+### Terror Attacks by Taliban 1970-2015 - Group Responsible for Most Number of Attacks
+
+```{r}
+
+taliban <- globalterror[globalterror$gname == "Taliban",] %>% group_by(iyear) %>% summarise(Total = n())
+
+hchart(taliban, x = iyear, y = Total, color = "darkred", "column") %>%
+    hc_title(text = "Terror Attacks by Taliban 1970-2015") %>%
+    hc_add_theme(hc_theme_google()) %>%
+    hc_credits(enabled = TRUE, text = "Sources: National Consortium for the Study of Terrorism and Responses to Terrorism (START)", style = list(fontSize = "10px")) 
+
+```
+
+
+* Taliban's first attack was in 1995
+* After that they have grown as the most deadliest terror group.
+* There is exponential growth of the attacks in last few years.
+
+### Map of Terror Attacks by Top 10 Groups
+
+```{r}
+
+by_gname <- globalterror[globalterror$gname != "Unknown", ] %>% group_by(gname) %>% summarise(Total = n()) %>% arrange(desc(Total)) %>% head(10)
+
+datatable(by_gname)
+
+map_top10 <- globalterror[globalterror$gname %in% by_gname$gname,] %>% group_by(country_txt) %>% summarise(Total = n())
+names(map_top10) <- c("country.name", "total")
+map_top10$iso3 <- countrycode_data[match(map_top10$country.name, countrycode_data$country.name), "iso3c"]
+
+
+highchart() %>% 
+  hc_add_series_map(worldgeojson, map_top10, value = "total", joinBy = "iso3") %>% 
+  hc_colorAxis(stops = dshmstops) %>% 
+  hc_legend(enabled = TRUE) %>% 
+  hc_add_theme(hc_theme_db()) %>% 
+  hc_mapNavigation(enabled = TRUE) %>%
+  hc_add_theme(hc_theme_google()) %>%
+  hc_add_theme(hc_theme_google()) %>%
+  hc_credits(enabled = TRUE, text = "Sources: National Consortium for the Study of Terrorism and Responses to Terrorism (START)", style = list(fontSize = "10px")) 
+
+```
+
+* Taliban is active only in 3 countries and vast majority of attacks are in Afghanistan
+* Shining path is deadliest group in South America
+* FLMN is deadliest in Central America
+* IRA  and ETA is deadliest of Europe
+* Al-Shabaab and Boko Aaram are deadliest groups of Africa
+* New People's Army (NPA) is deadliest group responsible for attacks in Philippines with couple of attacks in Pakistan and India
+
+
+### Map of Terror Attacks by Unknown Groups
+
+```{r}
+
+map_unknown <- globalterror[globalterror$gname == "Unknown",] %>% group_by(country_txt) %>% summarise(Total = n())
+names(map_unknown) <- c("country.name", "total")
+map_unknown$iso3 <- countrycode_data[match(map_unknown$country.name, countrycode_data$country.name), "iso3c"]
+
+
+highchart() %>% 
+  hc_add_series_map(worldgeojson, map_unknown, value = "total", joinBy = "iso3") %>% 
+  hc_colorAxis(stops = dshmstops) %>% 
+  hc_legend(enabled = TRUE) %>% 
+  hc_add_theme(hc_theme_db()) %>% 
+  hc_mapNavigation(enabled = TRUE) %>%
+  hc_add_theme(hc_theme_google()) %>%
+  hc_add_theme(hc_theme_google()) %>%
+  hc_credits(enabled = TRUE, text = "Sources: National Consortium for the Study of Terrorism and Responses to Terrorism (START)", style = list(fontSize = "10px")) %>%
+  hc_title(text = "Map of Terror Attacks by Unknown Groups") %>%
+  hc_subtitle(text = "More than half of the terror attacks do not have group name recorded.")  
+
+```
+
+* Iraq has 15K attacks without group name
+* Pakistan, India and Afghanistan have more than 15K attacks without group name.

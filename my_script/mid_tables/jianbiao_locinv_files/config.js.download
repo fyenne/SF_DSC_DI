@@ -1,0 +1,132 @@
+window.globalConfigs = {
+  localhost: `bdp.fc.dev.sf-express.com`, // 当前域名 或者 ip:port 接口调用任务demo中使用
+  sitHost: 'data.sit.sf-express.com',
+  devHost: 'bdp.fc.dev.sf-express.com',
+  proHost: 'data.sf-express.com',
+  isSf: true,
+  logoPath: './logo.svg',
+  hasSmokingTest: false, // 此处控制是否需要冒烟测试执行 如果为false则切换为 测试执行
+  storageData: {
+    ideScriptTip: {
+      isConfirmed: false,
+      show: true,
+      content:
+        '新旧版IDE的脚本数据隔离，待旧版下线时会将全部旧版数据迁移至新版，具体下线时间待定。',
+    },
+    smokingTestTag: true, // 此处控制冒烟测试按钮是否被点击过，海报中isConfirmed为true也会更改此处状态
+    version: '006',
+    posterList: [
+      {
+        id: 1,
+        path: [
+          { pathname: '/sch', exact: false },
+          { pathname: '/dev', exact: false },
+        ],
+        isConfirmed: true, // 此处控制海报弹窗是否需要弹出 true 为不需要弹出
+        title: undefined,
+        imgSrc: '/smoking-test-poster.png',
+        checkLabel: '我已知晓该功能，不再提示',
+        checkProps: {
+          style: {
+            fontSize: '12px',
+            color: '#333333',
+            letterSpacing: 0,
+            lineHeight: '20px',
+            padding: '12px 0',
+          },
+        },
+        content: `
+          <div style="position:absolute;bottom:80px;left:0;width:100%;text-align:center;">
+            <a style="
+              color:#4F5265;
+              font-size:18px;
+              letter-spacing: 0; 
+              text-align: center;
+              background: #FFFFFF;
+              display:inline-block;
+              border: 1px solid #D4D7E4;
+              border-radius: 24px;
+              padding:0 48px;
+              line-height:48px;
+              height:48px;
+              box-shadow:0 4px 6px #ccc;
+              "
+              href="http://confluence.sf-express.com/pages/viewpage.action?pageId=113536343"target="_blank">
+              查看更多“冒烟测试”详情 <font style="display:inline-block;color:#3954FF;letter-spacing:-6px;transform:scale(0.8,1);">&gt;&gt;</font>
+            </a>
+          </div>
+          `,
+        btnLabel: '我知道了',
+        btnProps: {
+          type: 'primary',
+          style: {
+            fontSize: 16,
+            padding: '0 48px',
+            height: 30,
+          },
+        },
+        styleText: undefined,
+        scriptText: undefined,
+      },
+    ],
+  },
+  docUrlConfigs: { ideHelpCenter: {} },
+  sfDocUrlConfigs: {
+    helpCenter: {
+      // 帮助中心
+      docCenter: 'http://confluence.sf-express.com/pages/viewpage.action?pageId=74460136',
+      // 常见问题
+      qAndAnswers: 'http://confluence.sf-express.com/pages/viewpage.action?pageId=74460136',
+    },
+    ideHelpCenter: {
+      // 使用手册
+      operateManual: 'http://confluence.sf-express.com/pages/viewpage.action?pageId=99057943',
+      // 视频指导
+      videoGuide: 'http://confluence.sf-express.com/pages/viewpage.action?pageId=66362613',
+      // 常见问题
+      commonQuestions: 'http://confluence.sf-express.com/display/DEVHB/IDE',
+    },
+    // 不同环境对应不同的域名
+    devHost: 'data.sit.sf-express.com',
+    sitHost: 'bdp.fc.dev.sf-express.com',
+    proHost: 'data.sf-express.com',
+    // 冒烟测试说明
+    smokingTestDoc: 'http://confluence.sf-express.com/pages/viewpage.action?pageId=113536343',
+    //  依赖关系设置说明
+    relaySetDoc: 'http://confluence.sf-express.com/pages/viewpage.action?pageId=85201501',
+    // 《SLA管理规定》
+    slaRuleDoc: 'http://confluence.sf-express.com/pages/viewpage.action?pageId=105359655',
+    // 任务开发人员说明
+    taskDeveloperDoc: 'http://confluence.sf-express.com/pages/viewpage.action?pageId=74460332',
+    // 任务运维人员说明
+    taskDevopsDoc: 'http://confluence.sf-express.com/pages/viewpage.action?pageId=74460332',
+    // 应用科技立项说明
+    applicationIsTechDoc: 'http://confluence.sf-express.com/pages/viewpage.action?pageId=74460222',
+    // 用户加入租户原则
+    addUserInTenantRuleDoc:
+      'http://confluence.sf-express.com/pages/viewpage.action?pageId=74460222',
+    // 资源操作说明
+    resourceOprateDoc: 'http://confluence.sf-express.com/pages/viewpage.action?pageId=92065213',
+    // yarn离线队列资源无法使用？
+    yarnOfflineQueueDoc: 'http://confluence.sf-express.com/pages/viewpage.action?pageId=85201268',
+    // 数据资产网址
+    dagwebUrl: {
+      base: '/dagweb',
+      sit: 'http://data.sit.sf-express.com/dagweb/',
+      dev: 'http://bdp.fc.dev.sf-express.com/dagweb/',
+      prod: 'http://data.sf-express.com/dagweb/',
+    },
+    // 底盘地址 hive 诊断 查看地址
+    elephantProUrl: 'http://dr-elephant.sf-express.com',
+    elephantDevUrl: 'http://10.202.77.200:8889',
+    // 实例状态说明
+    jobStateDoc: 'http://confluence.sf-express.com/pages/viewpage.action?pageId=86721067',
+    // 任务真正的开始运行时间说明
+    jobStartTimeDoc: 'http://confluence.sf-express.com/pages/viewpage.action?pageId=85204154',
+    // 任务业务时间说明
+    jobScheduleTimeDoc: 'http://confluence.sf-express.com/pages/viewpage.action?pageId=85204154',
+    // 回收箱操作指引
+    rubbishBinDoc: 'http://confluence.sf-express.com/pages/viewpage.action?pageId=94369417',
+    //
+  },
+};
