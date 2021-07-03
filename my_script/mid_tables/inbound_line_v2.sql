@@ -48,8 +48,11 @@ partition (inc_day, data_source)
     data_source
 from 
     dsc_dwd.dwd_wh_scale_receipt_header_mid_di RH 
-    inner join ods_cn_bose.receipt_detail RD 
+    inner join dsc_dwd.dwd_wh_scale_receipt_detail_mid_di RD 
     on RH.INTERNAL_RECEIPT_NUM = RD.INTERNAL_RECEIPT_NUM
-    left join ods_cn_bose.receipt_container RC 
+    left join dsc_dwd.dwd_wh_scale_receipt_container_mid_di RC 
     on RD.INTERNAL_RECEIPT_NUM = RC.INTERNAL_RECEIPT_NUM 
     and RD.company = RC.company
+
+
+-- dwd_wh_scale_location_inventory_mid_di
