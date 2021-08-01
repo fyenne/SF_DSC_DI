@@ -1,0 +1,337 @@
+---
+title: "scale_dashboard"
+author: "Siming Yan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  flexdashboard::flex_dashboard:
+    vertical_layout: scroll
+    # css: bootstrap.min.css
+    theme:
+      bslib: true
+      version: 4
+---
+
+```{r setup, include = FALSE}
+ 
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r setup2, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+require(reshape2)
+library(lubridate)
+library(highcharter) # Interactive data visualizations
+library(viridis)
+
+# Create a custom theme for the plots. 
+custom_theme <- hc_theme(
+  colors = c('#5CACEE', 'green', 'red'),
+  chart = list(
+         backgroundColor = '#FAFAFA', 
+         plotBorderColor = "black"),
+  xAxis = list(
+         gridLineColor = "E5E5E5", 
+         labels = list(style = list(color = "#333333")), 
+         lineColor = "#E5E5E5", 
+         minorGridLineColor = "#E5E5E5", 
+         tickColor = "#E5E5E5", 
+         title = list(style = list(color = "#333333"))), 
+  yAxis = list(
+         gridLineColor = "#E5E5E5", 
+         labels = list(style = list(color = "#333333")), 
+         lineColor = "#E5E5E5", 
+         minorGridLineColor = "#E5E5E5", 
+         tickColor = "#E5E5E5", 
+         tickWidth = 1, 
+         title = list(style = list(color = "#333333"))),   
+  title = list(style = list(color = '#333333', fontFamily = "Lato")),
+  subtitle = list(style = list(color = '#666666', fontFamily = "Lato")),
+  legend = list(
+         itemStyle = list(color = "#333333"), 
+         itemHoverStyle = list(color = "#FFF"), 
+         itemHiddenStyle = list(color = "#606063")), 
+  credits = list(style = list(color = "#666")),
+  itemHoverStyle = list(color = 'gray'))
+```
+
+``` {js, include =F}
+// Inverse color of navigation bar.
+$('.navbar-inverse').removeClass('navbar-inverse').addClass('navbar-default');
+```
+
+<style>
+.colored {
+  background-color: #FAFAFA;
+}
+</style>
+
+ 
+
+```{r, include = F}
+dash_data = read.csv("./bms_longer0601.csv")
+```
+
+
+Worldwide
+=======================================================================
+
+
+Column {data-width=700 .no-padding}
+-------------------------------------
+
+### Renew by date(last renew time)
+
+```{r, echo = F}
+# plt0_data
+plt0_data = dash_data %>% group_by(variable) %>% summarise(n())
+names(plt0_data) = c("parent_cat", "count")
+# dash_data %>% head()
+plt1_data = dash_data %>% group_by(variable, value) %>% summarise(n())
+names(plt1_data) = c("parent_cat", "child_cat", "count")
+# plt1_data$parent_cat %>% unique
+# parent_cat1 = c("6a040f","9d0208","d00000","dc2f02","e85d04","f48c06","faa307")
+
+
+highchart() %>% 
+    hc_add_series(plt0_data, 
+                  hcaes(x = parent_cat, 
+                        y = count,
+                        color = parent_cat), 
+                  type = "pie") %>%
+    hc_tooltip(crosshairs = TRUE, 
+               borderWidth = 1.5, 
+               headerFormat = "", 
+               pointFormat = paste0("Cats: <b> {point.x} </b> <br> amount: <b>{point.y}</b>")) %>%
+    hc_title(text = "BMS categories amount") %>% 
+    # hc_subtitle(text = "1985-2015") %>%
+    hc_xAxis(categories = (plt1_data$parent_cat %>% unique()), 
+             title = list(text = "cats")) %>%
+    hc_yAxis(title = list(text = "categories data_count"),
+             allowDecimals = FALSE,
+             plotLines = list(list(
+                    color = "black", width = 1, dashStyle = "Dash", 
+                    value = mean(plt1_data$count),
+                    label = list(text = "Mean = 37.56", 
+                                 style = list(color = "black",
+                                              fontSize = 11))))) %>%
+    hc_legend(enabled = FALSE) %>% 
+    hc_add_theme(custom_theme)
+
+ 
+```
+ 
+
+Column {data-width=1300 .no-padding}
+-------------------------------------
+
+### Renew by date(last renew time)
+
+
+```{r, include = F}
+plt1_data$child_cat %>% length
+plt1_data$count %>% length
+
+```
+
+```{r echo = F}
+parent_cat1 = c("6a040f","9d0208","d00000","dc2f02","e85d04","f48c06","faa307")
+# plt1_data$parent_cat %>% unique
+highchart() %>% 
+    hc_add_series(plt1_data, 
+                  hcaes(x = child_cat, 
+                        y = 'count'), type = "column") %>% 
+    hc_xAxis(categories = (plt1_data$child_cat %>% unique()), 
+             title = list(text = "cats")) %>% 
+    hc_legend(enabled = FALSE) %>% 
+    hc_add_theme(custom_theme)
+```
+
+```{r include = F}
+# write.csv(dash_data, "./april_billing_data/bms_longer2.csv", row.names = F, fileEncoding = "UTF-8")
+```
+ 
+
+analysis
+=======================================================================
+
+ 
+Column {data-height=2000 .no-padding}
+-------------------------------------
+
+```{r, include = F}
+library(lfe)
+library(DT)
+# 6.3
+bms_apr = read.csv("./april_billing_data/bms_billing_apr.csv", encoding = "UTF-8")
+bms_mar = read.csv("./april_billing_data/bms_billing_mar.csv", encoding = "UTF-8")
+bms_feb = read.csv("./april_billing_data/bms_billing_feb.csv", encoding = "UTF-8")
+ 
+bms_feb$账单结束日期 = ymd(bms_feb$账单结束日期)
+bms_mar$账单结束日期 = ymd(bms_mar$账单结束日期)
+bms_apr$账单结束日期 = ymd(bms_apr$账单结束日期)
+
+bms_feb_to_apr = rbind(bms_feb, bms_mar, bms_apr)
+bms_feb_to_apr$month = month(bms_feb_to_apr$账单结束日期)
+
+
+bms_feb_to_apr$comma = 0
+l = {}
+
+for (i in 1:173){
+  l = append(l, str_extract_all(bms_feb_to_apr$项目编码[grep("\\,",bms_feb_to_apr$项目编码)], "\\,")[[i]] %>% length())
+};l
+
+
+bms_feb_to_apr$comma[grep("\\,",bms_feb_to_apr$项目编码)] = l
+bms_feb_to_apr$comma = bms_feb_to_apr$comma+1
+#----
+# bms_feb_to_apr$month
+names(bms_feb_to_apr) = c("bill_id", "client_code","client", "project_code","proj_name", "dep",
+                          "bill_code", "cycle","term_time", "way_of_b","way_of_sep", "BU",
+                          "cash","money","month","comma")
+bms_feb_to_apr = bms_feb_to_apr[-grep("测试",bms_feb_to_apr$client), ]
+bms_feb_to_apr$money = gsub("\\,","", bms_feb_to_apr$money) %>% as.numeric()
+
+bms_feb_to_apr = distinct(bms_feb_to_apr)
+
+bms_feb_to_apr0 = bms_feb_to_apr
+
+# ---------------
+
+count_comma = bms_feb_to_apr %>% select(client, project_code, dep, month, comma, money) %>% distinct()
+# count_comma = count_comma[-grep("测试",count_comma$client), ]
+# count_comma$money = gsub("\\,","", count_comma$money) %>% as.numeric()
+# drop xiangmu bianma repeted
+
+time_line_comma = count_comma %>% group_by(dep, month) %>% 
+  summarise(sum(comma),sum(money));time_line_comma
+  
+
+client_count_comma = count_comma %>% group_by(client) %>% 
+  summarise(sum(comma),dep) %>% 
+  distinct()
+ 
+# count_comma[count_comma$month == 2, ] %>% filter(dep == "高科技")
+names(time_line_comma)[3:4] = c("pj_amount", "revenue")
+client_count_comma
+
+time_line_comma
+```
+
+
+```{r, include = F}
+write.csv(time_line_comma, "./dashboard3/time_line_comma.csv", fileEncoding = "UTF-8")
+write.csv(bms_feb_to_apr, "./dashboard3/bms_feb_to_apr.csv", fileEncoding = "UTF-8")
+write.csv(client_count_comma, "./dashboard3/client_count_comma.csv", fileEncoding = "UTF-8")
+ 
+# count_comma %>% knitr::kable
+# knitr::kable(count_comma)
+```
+#------
+
+
+#------
+#------
+
+```{r}
+read.csv()
+```
+
+#------
+
+#------
+
+
+```{r, include = F}
+#------
+
+bms_all_apr = read.csv("./april_billing_data/bms_all_ap.csv", encoding = "UTF-8")
+bms_all_apr = bms_all_apr %>% select(c("账单金额.单位.元.","客户ID",
+                                     "客户名称","项目名称",
+                                     "variable","所属行业","结算币种",
+                                     "ID_x", "value", "结算币种"))
+
+bms_all_apr[bms_all_apr$cash == "美元",]$bill_amount = 
+bms_all_apr[bms_all_apr$cash == "美元",]$bill_amount * 6.38
+bms_all_apr[bms_all_apr$cash == "欧元",]$bill_amount = 
+bms_all_apr[bms_all_apr$cash == "欧元",]$bill_amount * 7.8
+names(bms_all_apr)=c("bill_amount", "customer_id",
+                       "客户名称","项目名称", "cat1", "dep", "cash", "ID", "cat2")
+
+
+## dependent "账单金额.单位.元."
+# fe "客户ID" ,"variable","所属行业","结算币种"
+# ce "ID_x", "value", "结算币种"
+
+# bms_all_apr$customer_id %>% unique %>% length # 65 个项目
+ 
+
+bms_all_apr = merge(bms_all_apr, 
+                    (bms_all_apr %>% group_by(customer_id) %>% count()), by = "customer_id")
+
+
+reg_cat_length_data = bms_all_apr %>% group_by(customer_id) %>% slice(1)
+reg_cat_length_data$bill_amount = gsub(",","",reg_cat_length_data$bill_amount) %>% as.numeric()
+
+# reg_cat_length_data$dep %>% unique
+# reg_cat_length_data$cash %>% unique
+
+
+bms_all_apr %>% group_by(cat1) %>% summarise(sum(bill_amount))
+```
+
+```{r, include = F}
+# reg_cat_length = felm(bill_amount ~ n+dep+cash|0|0|dep, data = reg_cat_length_data) %>% summary()
+# reg_cat_length
+# 高科技 美元
+strip_comma = function(item) {gsub("\\,", "", item)}
+
+sapply(bms_all_apr$bill_amount, strip_comma)
+
+
+bms_all_apr$bill_amount = as.numeric(gsub("\\,","",bms_all_apr$bill_amount))
+#
+
+
+list = c("其他操作费", "出库费","入库费","其他增值服务费","场内操作费")
+bms_all_apr[bms_all_apr$cat2 == list, ]$cat2 %>% unique
+bms_all_apr[bms_all_apr$cat2 == list, ]$bill_amount %>% sum()
+bms_all_apr$bill_amount %>% sum
+
+bms_all_apr$cat2
+bms_all_apr[bms_all_apr$cat2 == "仓储费",]$bill_amount %>% sum()
+
+bms_all_apr = bms_all_apr %>% distinct()
+25711073/298887627
+25075914/298887627
+# 0.08814059
+
+
+bms_all_apr %>% group_by(cat1, cat2) %>% summarise(sum(bill_amount))
+
+```
+
+analysis 2
+=======================================================================
+
+ 
+Column {data-height=2000 .no-padding}
+-------------------------------------
+
+ 
+ 
+```{r}
+client_count_comma  %>%
+  datatable(rownames = FALSE ,
+          # colnames = c('Country', 'Year', 'Suicides /100K'),
+          class = 'cell-border stripe',
+          extensions = "Scroller",
+          options=list(deferRender = FALSE, 
+                       scrollY = 2000, 
+                       scrollCollapse = TRUE,
+                       scroller = TRUE,
+                       dom = 't'))
+```
+
