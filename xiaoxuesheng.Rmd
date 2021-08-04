@@ -1,0 +1,424 @@
+---
+title: "scale_dashboard"
+author: "Siming Yan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: scroll
+    # css: bootstrap.min.css
+    theme:
+      # bslib: true
+      version: 4
+---
+
+<style>
+.colored {
+  background-color: #FAFAFA;
+}
+</style>
+
+
+
+``` {js}
+// Inverse color of navigation bar.
+$('.navbar-inverse').removeClass('navbar-inverse').addClass('navbar-default');
+```
+
+```{r setup, include = FALSE}
+ 
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+
+```{r setup2, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(reshape2)
+library(lubridate)
+library(highcharter) # Interactive data visualizations
+library(viridis)
+library(DT)
+library(lfe)
+library(stargazer)
+library(tidyverse)
+
+library(stringr)
+library(lubridate)
+library(zoo)
+# vignette("highcharter")
+# vignette("highcharts-api")
+```
+
+```{r, include = F}
+data_modi = readxl::read_excel("./data_modi.xlsx")
+data1 = readxl::read_excel("./data1.xlsx")
+data2 = readxl::read_excel("./data2.xlsx")
+# names(data1)
+```
+
+```{r include=FALSE}
+# Create a custom theme for the plots. 
+custom_theme <- hc_theme(
+  colors = c('#5CACEE', '#ee9e5c','#eee75c', '#5ceee7'),
+  chart = list(
+         backgroundColor = '#FAFAFA', 
+         plotBorderColor = "black"),
+  xAxis = list(
+         gridLineColor = "E5E5E5", 
+         labels = list(style = list(color = "#333333")), 
+         lineColor = "#E5E5E5", 
+         minorGridLineColor = "#E5E5E5", 
+         tickColor = "#E5E5E5", 
+         title = list(style = list(color = "#333333"))), 
+  yAxis = list(
+         gridLineColor = "#E5E5E5", 
+         labels = list(style = list(color = "#333333")), 
+         lineColor = "#E5E5E5", 
+         minorGridLineColor = "#E5E5E5", 
+         tickColor = "#E5E5E5", 
+         tickWidth = 1, 
+         title = list(style = list(color = "#333333"))),   
+  title = list(style = list(color = '#333333', fontFamily = "Lato")),
+  subtitle = list(style = list(color = '#666666', fontFamily = "Lato")),
+  legend = list(
+         itemStyle = list(color = "#333333"), 
+         itemHoverStyle = list(color = "#FFF"), 
+         itemHiddenStyle = list(color = "#606063")), 
+  credits = list(style = list(color = "#666")),
+  itemHoverStyle = list(color = 'gray'))
+
+
+parent_cat1 = c("#6A040F","#9D0208","#E04A46","#DC2F02","#E85D04","#F48C06","#faa307","#f3e194")
+```
+
+```{r, include = F}
+names(data1)[27] = c('年级')
+names(data2)[27] = c('年级')
+names(data_modi)[3] = "年级"
+cols = c("姓名", "填写时间","年级","就诊部门","性别", "出生日期","所在城市", "学校","职业", "左眼裸眼视力","右眼裸眼视力", "平均上网时间", "上网工具","眼部存在问题", "是否感到压力","是否注意力集中", "是否有抑郁倾向（0：否1：是）","创建时间")
+data_modi = data_modi[,cols]
+data1 = data1[,cols]
+data2 = data2[,cols]
+df = rbind(data1, data2) 
+df = df[!df %>% duplicated(), ]
+names(data_modi) = names(df)
+
+  
+
+df = rbind(type.convert(df), type.convert(data_modi))
+df = df[!df %>% duplicated(),]
+typeof(df$填写时间)
+df$填写时间 = df$填写时间 %>% ymd() %>%  as.Date()
+df$出生日期 = df$出生日期 %>% ymd() %>%  as.Date()
+
+
+```
+
+
+```{r , include = F}
+df= df[ df$出生日期 < '2019-01-01',]
+df = drop_na(df, 姓名)
+df$学校 = '三台小学'
+df = df[df$职业 == '学生', ]
+ 
+df = drop_na(df)
+
+df$左眼裸眼视力 = df$左眼裸眼视力 %>% as.character() %>% as.numeric()
+df$右眼裸眼视力 = df$右眼裸眼视力 %>% as.character() %>% as.numeric()
+df = drop_na(df, '左眼裸眼视力')
+df = drop_na(df, '右眼裸眼视力')
+# ----------
+# df[df$左眼裸眼视力 != '20-40', ]
+# df[df$右眼裸眼视力 != '20-40', ]
+
+# write.csv(df, "./out_xiaoxuesheng.csv", row.names = F)
+```
+
+
+Page 1 
+=======================================================================
+
+Row {data-heights=400 .no-padding}
+-------------------------------------
+
+```{r, echo = F} 
+# gsub("\\-.+", "",df$出生日期[1])
+df$year = substr(df$出生日期 %>% as.character(), 1,4)
+df$month = substr(df$出生日期 %>% as.character(), 6,7)
+df$yearmon = as.yearmon(df$出生日期 %>% as.character())
+df$yearmon = as.character(df$yearmon) # 左眼裸眼视力
+
+df = df[df$year >= 2008, ]
+
+# plt2
+
+```
+
+```{r, echo = F}
+ 
+# levels(df$年级)
+df = df[df$年级 %in% levels(df$年级)[1:10], ]
+df = df[df$年级  != "其他", ]
+
+# df$年级 %>% unique()
+df$年级 = factor(df$年级, 
+       levels = c(
+         "小学一年级", "小学二年级", "小学三年级",
+         "小学四年级", "小学五年级", "小学六年级",
+         "初中一年级"), ordered = TRUE)
+plt_nianji = df %>% group_by(年级) %>% 
+  summarise(right = mean(右眼裸眼视力),
+            left = mean(左眼裸眼视力)) 
+# plt_nianji
+plt_nianji = plt_nianji %>% pivot_longer(cols =c(right, left))
+highchart() %>% 
+    hc_add_series(plt_nianji, 
+                  hcaes(x = 年级, 
+                        y = value,
+                        group = name,
+                        color = name), type = "line") %>% 
+  hc_tooltip(crosshairs = TRUE, borderWidth = 1.5, pointFormat = 
+                paste(
+                  "<b>{name}</b> 平均视力: <b>{point.value:.2f}<b>"
+                 )
+             ) %>% 
+    hc_xAxis(categories = (plt_nianji$年级 %>% unique), 
+             title = list(text = "时间")) %>% 
+    hc_legend(enabled = FALSE) %>% 
+    hc_title(text = "年级视力分布")  %>% 
+    hc_legend(verticalAlign = 'top', enabled = TRUE) %>% 
+    hc_add_theme(custom_theme)
+
+library(forecast)
+library(Hmisc) 
+
+# forecast(auto.arima(AirPassengers), level = 95)
+
+# hchart(airforecast)
+```
+
+
+Row {data-heights=200 .no-padding}
+-------------------------------------
+
+### 性别视力分布(左)
+
+```{r, echo = F}
+plt1 = df %>% 
+  group_by(性别) %>% 
+  summarise(left = mean(左眼裸眼视力) %>% round(3),
+            right = mean(右眼裸眼视力)%>% round(3))
+plt1$性别 = as.character(plt1$性别)
+plt1$cat = plt1$性别
+highchart() %>% 
+  hc_add_series(plt1, 
+                  hcaes(x = 性别, 
+                        y = left,
+                        group = cat), 
+                type = "column",
+                color = c("#92BFD4", "#E4D8CF")) %>% 
+  hc_tooltip(pointFormat =
+                paste(
+                  "视力: <b>{point.left}</b>"
+                 )
+             ) %>%
+  hc_xAxis(
+    categories = list(plt1$性别),
+             title = list(text = "性别")) %>% 
+  hc_yAxis(type = 'linear',
+             ceiling = 5.1,
+             floor = 5,
+             tooltipValueFormat = list(plt1$left),
+             title = list(text = "平均视力"),
+             startOnTick = T) %>% 
+  hc_legend(enabled = F) %>%
+  hc_title(text = "性别视力分布(左眼)") %>%
+  hc_add_theme(custom_theme)
+```
+
+
+
+### 性别视力分布(右)
+
+```{r, echo = F}
+# plt1$性别
+# library(highcharter)
+highchart() %>% 
+    hc_add_series(plt1, 
+                  hcaes(x = 性别, 
+                        y = right,
+                        group = cat), 
+                  type = "column",
+                  color = c("#92BFD4", "#E4D8CF")) %>% 
+  hc_tooltip(pointFormat = 
+                paste(
+                  "视力: <b>{point.right}</b>"
+                 )
+             ) %>% 
+    hc_xAxis(
+      categories = list(plt1$性别),
+             title = list(text = "性别")) %>% 
+    hc_yAxis(type = 'linear',
+             ceiling = 5.1,
+             floor = 5,
+             tooltipValueFormat = list(plt1$left),
+             title = list(text = "平均视力"),
+             startOnTick = T) %>% 
+    hc_legend(enabled = FALSE) %>% 
+    hc_title(text = "性别视力分布(右眼)") 
+```
+
+
+Page 2
+=======================================================================
+
+Column {data-heights=200 .no-padding}
+-------------------------------------
+
+### 上网工具
+
+```{r, echo = F}
+
+plt4 = df %>% group_by(上网工具) %>% summarise(n())
+# plt4
+
+ 
+highchart() %>% 
+    hc_add_series(plt4, 
+                  hcaes(x = 上网工具, 
+                        y = `n()`,
+                        color = 上网工具), type = "pie",
+                  color = parent_cat1[3:4]) %>% 
+    # hc_add_color
+    hc_xAxis(categories = (plt4$上网工具), 
+             title = list(text = "工具")) %>% 
+    hc_legend(enabled = FALSE) %>% 
+    hc_title(text = "上网工具使用量对比") %>%
+    hc_add_theme(custom_theme)
+
+```
+
+### 上网时间
+
+```{r, echo = F}
+plt5 = df %>% group_by(平均上网时间) %>% summarise(n())
+plt5$new =  plt5$`n()` %>% log(1.3) + 1
+plt5$new2 =  plt5$`n()`
+highchart() %>%
+    hc_add_series(plt5, 
+                  hcaes(x = 平均上网时间, 
+                        y = new,
+                        color = 平均上网时间), type = "pie",
+                  color = parent_cat1[3:4]) %>% 
+    # hc_add_color
+    hc_xAxis(categories = (plt4$平均上网时间), 
+             title = list(text = "上网时间")) %>% 
+    hc_legend(enabled = FALSE) %>% 
+    hc_title(text = "上网时间对比") %>%
+    hc_tooltip(crosshairs = TRUE, borderWidth = 1.5, pointFormat = 
+                paste(
+                  "<b>{name}</b> 上网时间: <b>{point.new2}<b>"
+                 ) )%>% 
+    hc_add_theme(custom_theme)
+```
+ 
+ 
+Row {data-height=600 .no-padding}
+-------------------------------------
+
+
+```{r, include = F}
+# 
+# df$yearmon %>% unique() %>% length
+# df$出生日期 %>% unique() %>% length
+df$出生日期 = df$出生日期 %>% floor_date(unit = 'month')
+plt2 = df %>% 
+  group_by(出生日期) %>% 
+  summarise(right = mean(右眼裸眼视力),
+            left = mean(左眼裸眼视力))
+plt2 = plt2 %>% pivot_longer(cols =c(right, left))
+plt2
+```
+
+```{r, echo = F} 
+
+highchart() %>% 
+    hc_add_series(plt2, 
+                  hcaes(x = 出生日期, 
+                        y = value,
+                        group = name,
+                        color = name), type = "line") %>% 
+  hc_tooltip(crosshairs = TRUE, borderWidth = 1.5, pointFormat = 
+                paste(
+                  "<b>{name}</b> 平均视力: <b>{point.value:.2f}<b>"
+                 )
+             ) %>% 
+    hc_xAxis(categories = (plt2$出生日期) %>% as.character(), 
+             title = list(text = "时间")) %>% 
+    hc_legend(enabled = FALSE) %>% 
+    hc_title(text = "时间视力分布")  %>% 
+    hc_legend(verticalAlign = 'top', enabled = TRUE) %>% 
+    hc_add_theme(custom_theme)
+
+# plt2$出生日期[1]
+plt2_right = plt2[plt2$name == 'right', ] 
+# plt2_right = plt2_right %>% select("value", "plt2_left
+# row.names(plt2_right) = plt2[plt2$name == 'right', ] $yearmon
+ 
+library(xts)
+plt2_right = plt2_right %>% select('出生日期', 'value')
+plt2_right_xts = xts(plt2_right$value, plt2_right$出生日期)
+plt2_right_forc = forecast(auto.arima(plt2_right_xts,
+                      start.p = .2,
+  start.q = .2,
+  start.P = .1,
+  start.Q = .1,
+  approximation = (length(plt2_right_xts) > 12 | frequency(plt2_right_xts) > 2)
+  	
+# If TRUE, estimation is via conditional sums of squares and the information criteria used for model selection are approximated. The final model is still computed using maximum likelihood estimation. Approximation should be used for long time series or a high seasonal period to avoid excessive computation times.
+), 16)
+
+
+hchart(plt2_right_forc)
+```
+
+```{r}
+plt2_left = plt2[plt2$name == 'left', ] 
+plt2_left = plt2_left %>% select('出生日期', 'value')
+plt2_left_xts = xts(plt2_left$value, plt2_left$出生日期)
+
+
+plt2_forc = forecast(auto.arima(plt2_left_xts,  start.p = .2,
+  start.q = .2,
+  start.P = .1,
+  start.Q = .1,
+                    
+  approximation = (length(plt2_left_xts) > 1 | frequency(plt2_left_xts) > 1)), 16)
+
+
+hchart(plt2_forc)
+```
+
+project count
+=======================================================================
+
+ 
+Column {data-height=2000 .no-padding}
+-------------------------------------
+
+```{r, echo = F}
+# client_count_comma
+# DT::datatable(
+#   client_count_comma,
+#   rownames = FALSE ,
+#   class = 'cell-border stripe',
+#   extensions = "Scroller",
+#   options=list(deferRender = FALSE, 
+#                scrollY = 2000, 
+#                scrollCollapse = TRUE,
+#                scroller = TRUE,
+#                dom = 't'))
+```
+
